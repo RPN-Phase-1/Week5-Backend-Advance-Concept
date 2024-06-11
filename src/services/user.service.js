@@ -64,7 +64,7 @@ const updateUserById = async (userId, updateBody) => {
   if (!user) {
     throw new ApiError(httpStatus.NOT_FOUND, 'User not found');
   }
-  if (updateBody.email && (await user.isEmailTaken(updateBody.email, userId))) {
+  if (updateBody.email !== user.email && (await getUserByEmail(updateBody.email))) {
     throw new ApiError(httpStatus.BAD_REQUEST, 'Email already taken');
   }
 

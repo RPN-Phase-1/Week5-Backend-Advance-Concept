@@ -6,6 +6,8 @@ const cors = require('cors');
 const passport = require('passport');
 const httpStatus = require('http-status');
 const path = require('path');
+const cookieParser = require('cookie-parser');
+const methodOverride = require('method-override');
 const config = require('./config/config');
 const morgan = require('./config/morgan');
 const { jwtStrategy } = require('./config/passport');
@@ -20,7 +22,8 @@ if (config.env !== 'test') {
   app.use(morgan.successHandler);
   app.use(morgan.errorHandler);
 }
-
+app.use(methodOverride('_method'));
+app.use(cookieParser());
 // set security HTTP headers
 app.use(helmet());
 
