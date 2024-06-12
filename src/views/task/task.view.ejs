@@ -2,15 +2,20 @@
 <html>
 <head>
   <title>Task Manager</title>
-
+  <style>
+    .done{
+      background-color: grey;
+      text-decoration: line-through;
+    }
+  </style>
 </head>
-<body>
+<body class="<%= task.isDone == 0 ? '' : 'done' %>">
   <h1>Task Manager</h1>
   <p>Selamat datang, <%= user.name %></p>
   <a href="/v1/task">Kembali</a><br><br>
   <p id="pesan" style="display: none;"></p>
         <label for=""></label>
-        <form action="/v1/task/<%= task.id %>?_method=PATCH" method="POST">
+        <form action="/v1/task/<%= task.id %>?_method=PATCH" method="POST" onsubmit="return cekForm()">
           <input name="title" type="text" class="edit-task-title" value="<%= task.title %>">
           <br>
           <textarea name="description" cols="22" placeholder="Tambahkan catatan" rows="5"><%= task.description %></textarea>
@@ -49,6 +54,10 @@
           </form>
         </ul>
         <br>
+        <form action="/v1/task/<%= task.id %>?_method=PATCH" method="POST">
+          <input id="done" type="hidden" name="isDone" value="<%= task.isDone == 0 ? 1 : 0 %>">
+          <button type="submit"><%= task.isDone == 0 ? 'Tandai Selesai' : 'Kerjakan kembali' %></button>
+        </form>
         with: <span class="users">
         <% task.users.forEach(taskUser => { %>
           <span class="user" data-user-id="<%= taskUser.userId %>"><%= taskUser.User.name %>

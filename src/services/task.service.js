@@ -19,9 +19,7 @@ const createTask = async (taskBody) => {
  */
 const queryTasks = async () => {
   const tasks = await prisma.task.findMany({
-    orderBy: {
-      priority: 'asc',
-    },
+    orderBy: [{ isDone: 'asc' }, { priority: 'asc' }],
   });
   return tasks;
 };

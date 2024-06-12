@@ -6,8 +6,12 @@ const { taskService, taskUserService } = require('../services');
 const getTasks = catchAsync(async (req, res) => {
   const result = await taskService.queryTasks(req.query);
   const { user } = req;
-
-  res.render('task/tasks.view.ejs', { user, result });
+  const prior = [
+    ['High', 'red'],
+    ['Middle', 'yellow'],
+    ['Low', 'green'],
+  ];
+  res.render('task/tasks.view.ejs', { user, result, prior });
   // res.status(httpStatus.OK).send({
   //   status: httpStatus.OK,
   //   message: "Get Tasks Success",

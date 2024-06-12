@@ -2,6 +2,21 @@
 <html>
 <head>
   <title>Task Manager</title>
+  <style>
+    .red{
+      color: red;
+    } 
+    .yellow{
+      color: yellow;
+    } 
+    .green{
+      color: green;
+    }
+    .done{
+      text-decoration: line-through;
+      background-color: grey;
+    }
+  </style>
 </head>
 <body>
   <h1>Task Manager</h1>
@@ -18,15 +33,14 @@
       <th>Judul</th>
       <th>Diskripsi</th>
     </tr>
-    <% const prior = [['High','red'],['Middle','yellow'],['Low','green']];
-    for(let r=0;r<result.length;r++){ %>
-    <tr>
+    <% for(let r=0;r<result.length;r++){ %>
+    <tr class="<%= result[r].isDone == 0 ? '' : 'done' %>">
         <td>
             <form action="/v1/task/<%= result[r].id %>?_method=DELETE" method="POST">
                 <button type="submit">Delete</button>
             </form>
         </td>
-        <td style="color: <%= prior[result[r].priority][1] %>;">
+        <td class="<%= prior[result[r].priority][1] %>">
             <%= prior[result[r].priority][0] %>
         </td>
         <td>
