@@ -25,7 +25,7 @@ const login = catchAsync(async (req, res) => {
     sameSite: process.env.NODE_ENV === 'production' ? 'None' : 'Lax',
   });
 
-  res.redirect('/v1/users');
+  res.redirect('/v1/task');
 });
 
 const logout = catchAsync(async (req, res) => {

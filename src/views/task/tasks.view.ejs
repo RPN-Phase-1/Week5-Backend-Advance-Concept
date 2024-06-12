@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Task Manager</title>
+</head>
+<body>
+  <h1>Task Manager</h1>
+  <p>Selamat datang, <%= user.name %></p>
+  <a href="v1/users">Daftar User</a><br><br>
+  <form action="/v1/task" method="POST">
+    <input type="text" name="title" placeholder="Add new task">
+    <button type="submit">Add</button>
+  </form>
+  <table>
+    <tr>
+      <th>Aksi</th>
+      <th>Prioritas</th>
+      <th>Judul</th>
+      <th>Diskripsi</th>
+    </tr>
+    <% const prior = [['High','red'],['Middle','yellow'],['Low','green']];
+    for(let r=0;r<result.length;r++){ %>
+    <tr>
+        <td>
+            <form action="/v1/task/<%= result[r].id %>?_method=DELETE" method="POST">
+                <button type="submit">Delete</button>
+            </form>
+        </td>
+        <td style="color: <%= prior[result[r].priority][1] %>;">
+            <%= prior[result[r].priority][0] %>
+        </td>
+        <td>
+            <a href="/v1/task/<%= result[r].id %>" class="task-title"><%= result[r].title %></a>
+        </td>
+        <td>
+            <%= result[r].description %>
+        </td>
+    </tr>
+    <% } %>
+  </table> 
+
+</body>
+
+</html>
