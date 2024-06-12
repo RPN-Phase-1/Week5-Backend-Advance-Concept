@@ -3,4 +3,6 @@ module.exports.emailService = require('./email.service');
 module.exports.tokenService = require('./token.service');
 module.exports.userService = require('./user.service');
 module.exports.taskService = require('./task.service');
+module.exports.subTaskService = require('./subTask.service');
 module.exports.taskUserService = require('./taskUser.service');
+module.exports.subTaskUserService = require('./subTaskUser.service');

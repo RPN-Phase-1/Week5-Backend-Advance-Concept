@@ -16,23 +16,35 @@
           <textarea name="description" cols="22" placeholder="Tambahkan catatan" rows="5"><%= task.description %></textarea>
           <br>
           <select name="priority" >
-            <option value="0" <%= task.priority==0 ? 'selected' : '' %>>High</option>
-            <option value="1" <%= task.priority==1 ? 'selected' : '' %>>Middle</option>
-            <option value="2" <%= task.priority==2 ? 'selected' : '' %>>Low</option>
+            <option value="0" <%= task.priority == 0 ? 'selected' : '' %>>High</option>
+            <option value="1" <%= task.priority == 1 ? 'selected' : '' %>>Middle</option>
+            <option value="2" <%= task.priority == 2 ? 'selected' : '' %>>Low</option>
           </select>
           <br>
           <button type="submit">Simpan Perubahan</button>
         </form>
         <ul type="none">
           <% task.subTasks.forEach(subtask => { %>
-            <li data-subtask-id="<%= subtask.id %>">
-              <input type="checkbox" class="subtask" <% if(subtask.isDone) { %> checked <% } %>>
-              <input type="text" class="edit-subtask-title" value="<%= subtask.title %>">
-              <button class="delete-subtask">Delete</button>
+            <li style="display: flex">
+              <form action="/v1/subTask/<%= subtask.id %>?_method=PATCH" method="POST">
+                <input type="hidden" name="isDone" value="<%= subtask.isDone == 0 ? 1 : 0 %>">
+                <button type="submit"><%= subtask.isDone == 0 ? 'Selesai' : 'Batalkan' %></button>
+              </form>
+              <form action="/v1/subTask/<%= subtask.id %>?_method=PATCH" method="POST">
+                <input type="<%= subtask.isDone == 0 ? 'text' : 'hidden' %>" value="<%= subtask.title %>" name="title" <%= subtask.isDone == 0 ? '' : 'readonly' %>>
+                <span style="text-decoration: line-through;"><%= subtask.isDone == 0 ? '' : subtask.title %></span>
+                <button type="submit">Update</button>
+              </form>
+              <form action="/v1/subTask/<%= subtask.id %>?_method=DELETE" method="POST">
+                <input type="hidden" name="taskId" value="<%= task.id %>">
+                <button type="submit">Delete</button>
+              </form>
             </li>
           <% }) %>
+          <br>
           <form action="/v1/subTask/" method="POST">
-            <input type="text" name="title"  placeholder="Add new subtask">
+            <input name="taskId" type="hidden" class="edit-task-title" value="<%= task.id %>">
+            <input type="text" name="title"  placeholder="Add new subtask" autofocus>
             <button type="submit">Add subtask</button>
           </form>
         </ul>
