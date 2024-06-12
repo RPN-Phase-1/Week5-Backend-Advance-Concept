@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Task Manager</title>
+
+</head>
+<body>
+  <h1>Task Manager</h1>
+  <p>Selamat datang, <%= user.name %></p>
+  <a href="/v1/task">Kembali</a><br><br>
+  <p id="pesan" style="display: none;"></p>
+        <label for=""></label>
+        <form action="/v1/task/<%= task.id %>?_method=PATCH" method="POST">
+          <input name="title" type="text" class="edit-task-title" value="<%= task.title %>">
+          <br>
+          <textarea name="description" cols="22" placeholder="Tambahkan catatan" rows="5"><%= task.description %></textarea>
+          <br>
+          <select name="priority" >
+            <option value="0" <%= task.priority==0 ? 'selected' : '' %>>High</option>
+            <option value="1" <%= task.priority==1 ? 'selected' : '' %>>Middle</option>
+            <option value="2" <%= task.priority==2 ? 'selected' : '' %>>Low</option>
+          </select>
+          <br>
+          <button type="submit">Simpan Perubahan</button>
+        </form>
+        <ul type="none">
+          <% task.subTasks.forEach(subtask => { %>
+            <li data-subtask-id="<%= subtask.id %>">
+              <input type="checkbox" class="subtask" <% if(subtask.isDone) { %> checked <% } %>>
+              <input type="text" class="edit-subtask-title" value="<%= subtask.title %>">
+              <button class="delete-subtask">Delete</button>
+            </li>
+          <% }) %>
+          <form action="/v1/subTask/" method="POST">
+            <input type="text" name="title"  placeholder="Add new subtask">
+            <button type="submit">Add subtask</button>
+          </form>
+        </ul>
+        <br>
+        with: <span class="users">
+        <% task.users.forEach(taskUser => { %>
+          <span class="user" data-user-id="<%= taskUser.userId %>"><%= taskUser.User.name %>
+            <button class="remove-user">x</button>
+          </span>
+        <% }) %>
+        </span>
+        <select class="userSelect">
+          <option value="">Add User</option>
+
+        </select>
+
+</body>
+</html>

@@ -22,7 +22,7 @@ const getTask = catchAsync(async (req, res) => {
   }
   const { user } = req;
   // console.log(task)
-  res.render('task', { user, task });
+  res.render('task/task.view.ejs', { user, task });
   // res.status(httpStatus.OK).send({
   //   status: httpStatus.OK,
   //   message: "Get Task Success",
@@ -46,13 +46,13 @@ const createTask = catchAsync(async (req, res) => {
 });
 
 const updateTask = catchAsync(async (req, res) => {
-  const task = await taskService.updateTaskById(req.params.taskId, req.body);
-
-  res.status(httpStatus.OK).send({
-    status: httpStatus.OK,
-    message: 'Update Task Success',
-    data: task,
-  });
+  await taskService.updateTaskById(req.params.taskId, req.body);
+  getTask(req, res);
+  // res.status(httpStatus.OK).send({
+  //   status: httpStatus.OK,
+  //   message: 'Update Task Success',
+  //   data: task,
+  // });
 });
 
 const deleteTask = catchAsync(async (req, res) => {
