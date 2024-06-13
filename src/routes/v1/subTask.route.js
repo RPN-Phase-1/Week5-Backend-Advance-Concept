@@ -15,6 +15,6 @@ router
   .route('/:subTaskId')
   .get(auth('doTasks'), validate(subTaskValidation.getSubTask), subTaskController.getSubTask)
   .patch(auth('doTasks'), validate(subTaskValidation.updateSubTask), subTaskController.updateSubTask)
-  .delete(auth('manageTasks'), validate(subTaskValidation.deleteSubTask), subTaskController.deleteSubTask);
+  .delete(auth('doTasks'), validate(subTaskValidation.deleteSubTask), subTaskController.deleteSubTask);
 
 module.exports = router;

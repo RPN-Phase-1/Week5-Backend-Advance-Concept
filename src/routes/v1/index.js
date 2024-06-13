@@ -2,7 +2,9 @@ const express = require('express');
 const authRoute = require('./auth.route');
 const userRoute = require('./user.route');
 const taskRoute = require('./task.route');
+const taskUserRoute = require('./taskUser.route');
 const subTaskRoute = require('./subTask.route');
+const subTaskUserRoute = require('./subTaskUser.route');
 const docsRoute = require('./docs.route');
 const config = require('../../config/config');
 
@@ -22,8 +24,16 @@ const defaultRoutes = [
     route: taskRoute,
   },
   {
+    path: '/taskUser',
+    route: taskUserRoute,
+  },
+  {
     path: '/subTask',
     route: subTaskRoute,
+  },
+  {
+    path: '/subTaskUser',
+    route: subTaskUserRoute,
   },
 ];
 

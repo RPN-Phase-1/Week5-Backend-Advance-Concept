@@ -23,6 +23,34 @@ const queryTasks = async () => {
   });
   return tasks;
 };
+const queryTasksByUser = async (userId) => {
+  const tasks = await prisma.task.findMany({
+    orderBy: [{ isDone: 'asc' }, { priority: 'asc' }],
+    where: {
+      OR: [
+        {
+          users: {
+            some: {
+              userId,
+            },
+          },
+        },
+        {
+          subTasks: {
+            some: {
+              users: {
+                some: {
+                  userId,
+                },
+              },
+            },
+          },
+        },
+      ],
+    },
+  });
+  return tasks;
+};
 
 /**
  * Get task by id
@@ -35,7 +63,15 @@ const getTaskById = async (id) => {
       id,
     },
     include: {
-      subTasks: true,
+      // subTasks: {
+      //   include: {
+      //     users: {
+      //       include: {
+      //         User: true,
+      //       },
+      //     },
+      //   },
+      // },
       users: {
         include: {
           User: true,
@@ -94,6 +130,7 @@ const deleteTaskById = async (taskId) => {
 module.exports = {
   createTask,
   queryTasks,
+  queryTasksByUser,
   getTaskById,
   updateTaskById,
   deleteTaskById,

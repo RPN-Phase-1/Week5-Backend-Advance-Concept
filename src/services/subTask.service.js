@@ -32,9 +32,51 @@ const getSubTaskById = async (id) => {
     where: {
       id,
     },
+    include: {
+      users: {
+        include: {
+          User: true,
+        },
+      },
+    },
   });
 };
 
+const getSubTaskByTask = async (taskId) => {
+  const subTasks = await prisma.subTask.findMany({
+    where: {
+      taskId,
+    },
+    include: {
+      users: {
+        include: {
+          User: true,
+        },
+      },
+    },
+  });
+  return subTasks;
+};
+const getSubTaskByUser = async (taskId, userId) => {
+  const subTasks = await prisma.subTask.findMany({
+    where: {
+      taskId,
+      users: {
+        some: {
+          userId,
+        },
+      },
+    },
+    include: {
+      users: {
+        include: {
+          User: true,
+        },
+      },
+    },
+  });
+  return subTasks;
+};
 /**
  * Update subtask by id
  * @param {ObjectId} subTaskId
@@ -76,7 +118,9 @@ const deleteSubTaskById = async (subTaskId) => {
 module.exports = {
   createSubTask,
   querySubTasks,
+  getSubTaskByTask,
   getSubTaskById,
+  getSubTaskByUser,
   updateSubTaskById,
   deleteSubTaskById,
 };

@@ -21,7 +21,10 @@
 <body>
   <h1>Task Manager</h1>
   <p>Selamat datang, <%= user.name %></p>
-  <a href="/v1/users">Daftar User</a><br><br>
+  <% if(user.role=='admin'){ %>
+    <a href="/v1/users">Daftar User</a><br><br>
+    <% } %> 
+    <a href="/v1/auth/logout">Logout</a><br><br>
   <form action="/v1/task" method="POST">
     <input type="text" name="title" placeholder="Add new task">
     <button type="submit">Add</button>
@@ -36,9 +39,11 @@
     <% for(let r=0;r<result.length;r++){ %>
     <tr class="<%= result[r].isDone == 0 ? '' : 'done' %>">
         <td>
+          <% if(user.role=='admin'){ %>
             <form action="/v1/task/<%= result[r].id %>?_method=DELETE" method="POST">
                 <button type="submit">Delete</button>
             </form>
+            <% } %>
         </td>
         <td class="<%= prior[result[r].priority][1] %>">
             <%= prior[result[r].priority][0] %>

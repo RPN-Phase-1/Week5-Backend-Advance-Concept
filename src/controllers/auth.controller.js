@@ -30,7 +30,9 @@ const login = catchAsync(async (req, res) => {
 
 const logout = catchAsync(async (req, res) => {
   await authService.logout(req.body.refreshToken);
-  res.status(httpStatus.NO_CONTENT).send();
+  res.clearCookie('jwt');
+  // res.status(httpStatus.NO_CONTENT).send();
+  res.redirect('/v1/auth/login');
 });
 
 const refreshTokens = catchAsync(async (req, res) => {

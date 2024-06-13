@@ -1,10 +1,16 @@
 const httpStatus = require('http-status');
 const catchAsync = require('../utils/catchAsync');
 const ApiError = require('../utils/ApiError');
-const { taskService, taskUserService } = require('../services');
+const { taskService, taskUserService, userService, subTaskService } = require('../services');
 
 const getTasks = catchAsync(async (req, res) => {
-  const result = await taskService.queryTasks(req.query);
+  let result;
+  if (req.user.role === 'admin') {
+    result = await taskService.queryTasks(req.query);
+  } else {
+    result = await taskService.queryTasksByUser(req.user.id);
+  }
+
   const { user } = req;
   const prior = [
     ['High', 'red'],
@@ -20,13 +26,26 @@ const getTasks = catchAsync(async (req, res) => {
 });
 
 const getTask = catchAsync(async (req, res) => {
-  const task = await taskService.getTaskById(req.params.taskId);
+  const userAll = await userService.queryUsers();
+  const { taskId } = req.params;
+
+  const task = await taskService.getTaskById(taskId);
   if (!task) {
     throw new ApiError(httpStatus.NOT_FOUND, 'Task not found');
   }
+  const { users } = task;
+  const userReady = userAll.filter((user) => !users.some((u) => u.userId === user.id));
   const { user } = req;
-  // console.log(task)
-  res.render('task/task.view.ejs', { user, task });
+  let subTasks;
+  let edit = true;
+  if (users.some((item) => item.userId === user.id)) {
+    subTasks = await subTaskService.getSubTaskByTask(taskId);
+  } else {
+    subTasks = await subTaskService.getSubTaskByUser(taskId, user.id);
+    edit = false;
+  }
+  // console.log(users);
+  res.render('task/task.view.ejs', { user, task, userReady, subTasks, edit });
   // res.status(httpStatus.OK).send({
   //   status: httpStatus.OK,
   //   message: "Get Task Success",
