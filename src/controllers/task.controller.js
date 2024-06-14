@@ -38,7 +38,7 @@ const getTask = catchAsync(async (req, res) => {
   const { user } = req;
   let subTasks;
   let edit = true;
-  if (users.some((item) => item.userId === user.id)) {
+  if (users.some((item) => item.userId === user.id) || req.user.role === 'admin') {
     subTasks = await subTaskService.getSubTaskByTask(taskId);
   } else {
     subTasks = await subTaskService.getSubTaskByUser(taskId, user.id);
