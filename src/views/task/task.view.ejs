@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Task Manager</title>
+  <style>
+    .done{
+      background-color: grey;
+    }
+  </style>
+</head>
+<body class="<%= task.isDone == 0 ? '' : 'done' %>">
+  <h1>Task Manager</h1>
+  <p>Selamat datang, <%= user.name %></p>
+  <a href="/v1/task">Kembali</a> | 
+  <a href="/v1/auth/logout">Logout</a><br><br>
+  <p id="pesan" style="display: none;"></p>
+        <label for=""></label>
+        <form action="/v1/task/<%= task.id %>?_method=PATCH" method="POST" onsubmit="return cekForm()">
+          <input <%= edit?'':'disabled' %> name="title" type="text" value="<%= task.title %>">
+          <br>
+          <textarea name="description" cols="22" placeholder="Tambahkan catatan" rows="5" <%= edit?'':'disabled' %>><%= task.description %></textarea>
+          <br>
+          <select name="priority" <%= edit?'':'disabled' %>>
+            <option value="0" <%= task.priority == 0 ? 'selected' : '' %>>High</option>
+            <option value="1" <%= task.priority == 1 ? 'selected' : '' %>>Middle</option>
+            <option value="2" <%= task.priority == 2 ? 'selected' : '' %>>Low</option>
+          </select>
+          <br>
+          <% if(edit){%>
+          <button type="submit">Simpan Perubahan</button>
+          <% }; %>
+        </form>
+          <table style="margin-left: 30px;">
+              <tr>
+                <td>
+                  
+                </td>
+                <td>
+                  Sub Task
+                </td>
+              </tr>
+            <% subTasks.forEach(subtask => { %>
+              <tr>
+                <td>
+                  <form action="/v1/subTask/<%= subtask.id %>?_method=PATCH" method="POST">
+                    <input type="hidden" name="isDone" value="<%= subtask.isDone == 0 ? 1 : 0 %>">
+                    <button type="submit"><%= subtask.isDone == 0 ? 'Selesai' : 'Batalkan' %></button>
+                  </form>
+                </td>
+                <td>
+                  <form action="/v1/subTask/<%= subtask.id %>?_method=PATCH" method="POST">
+                    <input type="<%= subtask.isDone == 0 ? 'text' : 'hidden' %>" value="<%= subtask.title %>" name="title" <%= subtask.isDone == 0 ? '' : 'readonly' %>>
+                    <span style="text-decoration: line-through;"><%= subtask.isDone == 0 ? '' : subtask.title %></span>
+                    <% if (subtask.isDone == 0){ %>
+                      <button type="submit">Update</button>%>
+                    <% }; %>
+                  </form>
+                </td>
+                <td>
+                  <% if(edit){%>
+                  <form action="/v1/subTask/<%= subtask.id %>?_method=DELETE" method="POST">
+                    <input type="hidden" name="taskId" value="<%= task.id %>">
+                    <button type="submit">Delete</button>
+                  </form>
+                  <% } %>
+                <td style="display: flex; margin-left: 20px;">
+                  <% if(edit){%>
+                  with: 
+                  <% subtask.users.forEach(user => { %>
+                    <span><%= user.User.name %></span>
+                    <form action="/v1/subTaskUser/<%= task.id %>?_method=DELETE" method="POST">
+                      <input type="hidden" name="userId" value="<%= user.User.id %>">
+                      <input type="hidden" name="subTaskId" value="<%= subtask.id %>">
+                      <button type="submit">x</button>
+                    </form>
+                    
+                    <% }) %>
+                  </td>
+                  <td> 
+                    <form action="/v1/subTaskUser/<%= task.id %>" method="POST">
+                      <input type="hidden" name="subTaskId" value="<%= subtask.id %>">
+                      <select name="userId" required>
+                        <option value="">Pilih User</option>
+                      <% const userReadySubTask = userReady.filter(user => !subtask.users.some(u => u.userId === user.id));
+                      userReadySubTask.forEach(userReadyTask => { %>
+                        <option value="<%= userReadyTask.id %>"><%= userReadyTask.name %></option>
+                      <% }) %>
+                      </select>
+                      <button type="submit">Hubungkan</button>
+                    </form>
+                  <% } %>
+                </td>
+              </tr>
+              <% }) %>
+          </table>
+          <br>
+          <% if(edit){%>
+          <form action="/v1/subTask/" method="POST">
+            <input name="taskId" type="hidden" class="edit-task-title" value="<%= task.id %>">
+            <input type="text" name="title"  placeholder="Add new subtask" autofocus>
+            <button type="submit">Add subtask</button>
+          </form>
+          <br>
+          <form action="/v1/task/<%= task.id %>?_method=PATCH" method="POST">
+            <input id="done" type="hidden" name="isDone" value="<%= task.isDone == 0 ? 1 : 0 %>">
+            <button type="submit"><%= task.isDone == 0 ? 'Tandai Selesai' : 'Kerjakan kembali' %></button>
+          </form>
+          with: <span class="users">
+            <% task.users.forEach(taskUser => { %>
+              <form action="/v1/taskUser?_method=DELETE" method="POST">
+                <input name="taskId" type="hidden" value="<%= task.id %>">
+                <input name="userId" type="hidden" value="<%= taskUser.userId %>">
+                <span class="user" data-user-id="<%= taskUser.userId %>"><%= taskUser.User.name %>
+                  <button type="submit">x</button>
+                </span>
+              </form>
+              <% }) %>
+            </span>
+            <form action="/v1/taskUser" method="POST">
+              <input type="hidden" name="taskId" value="<%= task.id %>">
+              <select name="userId" required>
+                <option value="">Pilih User</option>
+                <% userReady.forEach(userReadyTask => { %>
+                  <option value="<%= userReadyTask.id %>"><%= userReadyTask.name %></option>
+                  <% }) %>
+                </select>
+                <button type="submit">Hubungkan</button>
+              </form>
+          <% } %>
+</body>
+</html>

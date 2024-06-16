@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Task Manager</title>
+</head>
+<body>
+  <h1>Task Manager</h1>
+  <p>Selamat datang, <%= user.name %></p>
+  <a href="/v1/task">Kembali</a><br><br>
+  <form action="/v1/users/<%= result.id %>?_method=PATCH" method="POST">
+    <input type="text" name="name" placeholder="Name" required value="<%= result.name %>"/><br>
+    <input type="text" name="email" placeholder="Email" required value="<%= result.email %>"/><br>
+    <select name="role" >
+      <option value="user">user</option>
+      <option <%= result.role=='admin' ? 'selected' : '' %> value="admin">admin</option>
+    </select>
+    <button type="submit">Simpan</button>
+  </form>
+
+  
+  
+</body>
+<script>
+  
+</script>
+</html>

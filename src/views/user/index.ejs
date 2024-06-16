@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Task Manager</title>
+</head>
+<body>
+  <h1>Task Manager</h1>
+  <p>Selamat datang, <%= user.name %></p>
+  <a href="/v1/task">daftar Tugas</a><br><br>
+  <table>
+    <tr>
+      <th>Aksi</th>
+      <th>Nama</th>
+      <th>Email</th>
+      <th>role</th>
+    </tr>
+    <% for(let r=0;r<users.length;r++){ %>
+    <tr>
+        <td>
+            <a href="/v1/users/<%= users[r].id %>" class="task-title">Edit</a>
+            <form action="/v1/users/<%= users[r].id %>?_method=DELETE" method="POST">
+                <button type="submit">Delete</button>
+            </form>
+        </td>
+        <td>
+            <%= users[r].name %>
+        </td>
+        <td>
+            <%= users[r].email %>
+        </td>
+        <td>
+            <%= users[r].role %>
+        </td>
+    </tr>
+    <% } %>
+  </table> 
+  
+  
+</body>
+<script>
+  
+</script>
+</html>
