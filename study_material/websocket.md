@@ -1,5 +1,6 @@
 # Websocket
 ## 1. Apa itu Websocket
+![image](https://github.com/user-attachments/assets/73e9e8aa-e3cf-42e9-a553-7dfbf8d006f2)
 
 WebSocket adalah protokol komunikasi dua arah yang memungkinkan pertukaran data secara real-time antara server dan klien melalui koneksi TCP yang persisten. WebSocket memungkinkan komunikasi lebih efisien dibandingkan dengan HTTP karena koneksi terbuka dan tetap terjaga sepanjang sesi komunikasi.
 
@@ -57,68 +58,299 @@ WebSocket menggunakan protokol wss:// (seperti HTTPS) untuk mengenkripsi komunik
 
 Beberapa hal yang perlu diperhatikan terkait keamanan:
 
-- **Penggunaan WSS**: Selalu gunakan WebSocket dengan wss:// untuk mengenkripsi koneksi.
+- **Useran WSS**: Selalu gunakan WebSocket dengan wss:// untuk mengenkripsi koneksi.
 - **Autentikasi**: Pastikan klien terautentikasi dengan benar sebelum membuka koneksi WebSocket.
 - **Rate Limiting**: Batasi jumlah koneksi WebSocket yang dapat dibuat dari satu alamat IP untuk mencegah serangan DoS.
 - **Validasi Pesan**: Pastikan pesan yang diterima valid dan tidak menyebabkan eksekusi kode berbahaya.
 
-## 5. WebSocket Library dan Framework
+## 5. WebSocket ElysiaJs & HonoJs
 
-1. ws (Node.js WebSocket Library)
+Jika Kalian memakai Elysia (sebuah framework untuk Bun.js), Kalian dapat memanfaatkan integrasi WebSocket dengan cara serupa dengan bunjs.
+Elysia.js menyediakan dukungan WebSocket yang kuat, memungkinkan Kalian membangun aplikasi real-time dengan mudah. Berikut penjelasan komprehensif tentang cara kerja WebSocket di Elysia:
 
-- instalasi
-```
-npm install ws
-```
+### Dasar-dasar WebSocket di Elysia
 
-- penggunaan
-```js
-const WebSocket = require('ws');
-const wss = new WebSocket.Server({ port: 8080 });
+Di Elysia, fungsi WebSocket tersedia secara langsung tanpa memerlukan plugin tambahan. Kalian dapat mendefinisikan endpoint WebSocket menggunakan metode `.ws()`:
 
-wss.on('connection', (ws) => {
-  ws.on('message', (message) => {
-    console.log('Pesan diterima: ' + message);
-  });
-});
-```
+```typescript
+import { Elysia } from 'elysia'
 
-2. Socket.io
-Socket.io adalah library JavaScript yang memberikan WebSocket dan fallback untuk komunikasi real-time di Node.js.
-
-- instalasi
-```
-npm install socket.io
-```
-
-- Penggunaan Server
-```js
-const io = require('socket.io')(server);
-
-io.on('connection', (socket) => {
-  console.log('User connected');
-  socket.on('chat message', (msg) => {
-    io.emit('chat message', msg);
-  });
-});
+const app = new Elysia()
+  .ws('/ws', {
+    // Handler WebSocket di sini
+    open(ws) {
+      console.log('Koneksi dibuka')
+    },
+    message(ws, message) {
+      console.log('Diterima:', message)
+      ws.send(`Echo: ${message}`)
+    },
+    close(ws, code, message) {
+      console.log(`Koneksi ditutup: ${code} ${message}`)
+    },
+    error(ws, error) {
+      console.error('Error WebSocket:', error)
+    }
+  })
+  .listen(3000)
 ```
 
-- Penggunaan Klien: 
-```js
-const socket = io();
-socket.emit('chat message', 'Hello World');
-socket.on('chat message', (msg) => {
-  console.log(msg);
-});
+### Handler WebSocket
+
+Elysia menyediakan beberapa handler untuk berbagai event WebSocket:
+
+1. **open**: Dipicu ketika klien membuat koneksi
+2. **message**: Dipicu ketika klien mengirim pesan
+3. **close**: Dipicu ketika koneksi ditutup
+4. **error**: Dipicu ketika terjadi kesalahan
+
+## Konteks WebSocket (objek ws)
+
+Objek `ws` menyediakan metode dan properti untuk berinteraksi dengan koneksi WebSocket:
+
+- `ws.send(data)`: Mengirim data ke klien
+- `ws.close(code?, reason?)`: Menutup koneksi
+- `ws.publish(topic, data)`: Mempublikasikan data ke topik tertentu (untuk pub/sub)
+- `ws.subscribe(topic)`: Berlangganan ke topik
+- `ws.unsubscribe(topic)`: Berhenti berlangganan dari topik
+- `ws.id`: Pengenal unik untuk koneksi
+- `ws.data`: Data yang dibagikan sepanjang siklus hidup permintaan
+
+### Menyiarkan Pesan (Broadcasting)
+
+Untuk menyiarkan pesan ke semua klien yang terhubung, Kalian biasanya memelihara daftar koneksi aktif:
+
+```typescript
+const app = new Elysia()
+  .state('connections', new Set())
+  .ws('/ws', {
+    open(ws) {
+      app.store.connections.add(ws)
+    },
+    message(ws, message) {
+      // Siarkan ke semua koneksi
+      for (const connection of app.store.connections) {
+        connection.send(message)
+      }
+    },
+    close(ws) {
+      app.store.connections.delete(ws)
+    }
+  })
+  .listen(3000)
 ```
 
-3. Elysia WebSocket (Dalam Framework Elysia)
+### WebSocket dengan Autentikasi
 
-Jika kamu bekerja dengan Elysia (sebuah framework untuk Node.js), kamu dapat memanfaatkan integrasi WebSocket dengan cara serupa. Dokumentasi dan penggunaan spesifik dapat dilihat di dokumentasi resmi framework tersebut.
+Kalian dapat mengimplementasikan autentikasi untuk koneksi WebSocket:
+
+```typescript
+const app = new Elysia()
+  .ws('/ws', {
+    beforeHandle: ({ request, set }) => {
+      const token = new URL(request.url).searchParams.get('token')
+      if (!token || !validateToken(token)) {
+        set.status = 401
+        return 'Tidak Diizinkan'
+      }
+    },
+    open(ws) {
+      // Koneksi sudah diautentikasi
+      console.log('Koneksi terautentikasi dibuka')
+    }
+  })
+  .listen(3000)
+```
+
+### Pola Pub/Sub
+
+WebSocket Elysia mendukung pola pub/sub untuk komunikasi berbasis topik:
+
+```typescript
+const app = new Elysia()
+  .ws('/chat/:room', {
+    open(ws) {
+      const { room } = ws.data.params
+      ws.subscribe(room)
+      ws.publish(room, `User bergabung ke ${room}`)
+    },
+    message(ws, message) {
+      const { room } = ws.data.params
+      ws.publish(room, message)
+    },
+    close(ws) {
+      const { room } = ws.data.params
+      ws.unsubscribe(room)
+      ws.publish(room, `User meninggalkan ${room}`)
+    }
+  })
+  .listen(3000)
+```
+
+### Implementasi Sisi Klien
+
+Berikut cara menghubungkan ke endpoint WebSocket Elysia dari browser:
+
+```javascript
+const ws = new WebSocket(`ws://${window.location.host}/ws`)
+
+ws.onopen = () => {
+  console.log('Terhubung ke server')
+  ws.send('Halo, server!')
+}
+
+ws.onmessage = (event) => {
+  console.log('Diterima:', event.data)
+}
+
+ws.onclose = (event) => {
+  console.log('Koneksi ditutup:', event.code, event.reason)
+}
+
+ws.onerror = (error) => {
+  console.error('Error WebSocket:', error)
+}
+```
+
+### Penanganan Data JSON
+
+Untuk data terstruktur, Kalian bisa menggunakan JSON:
+
+```typescript
+// Server
+const app = new Elysia()
+  .ws('/ws', {
+    message(ws, message) {
+      if (typeof message === 'string') {
+        try {
+          const data = JSON.parse(message)
+          // Tangani data terstruktur
+          ws.send(JSON.stringify({ status: 'diterima', data }))
+        } catch (e) {
+          ws.send(JSON.stringify({ error: 'JSON tidak valid' }))
+        }
+      }
+    }
+  })
+  .listen(3000)
+
+// Klien
+ws.send(JSON.stringify({ type: 'chat', message: 'Halo!', user: 'Alice' }))
+```
+
+### WebSocket dengan Middleware
+
+Kalian dapat menerapkan middleware ke rute WebSocket:
+
+```typescript
+const logger = (ws) => {
+  console.log(`Koneksi baru: ${ws.id}`)
+  return () => {
+    console.log(`Koneksi ditutup: ${ws.id}`)
+  }
+}
+
+const app = new Elysia()
+  .ws('/ws', {
+    beforeHandle: [logger],
+    message(ws, message) {
+      ws.send(`Echo: ${message}`)
+    }
+  })
+  .listen(3000)
+```
+
+Untuk detail pembelajaran websocket elysia kalian bisa langsung cek dokumentasinya:
+
+https://elysiajs.com/patterns/websocket
+
+Buat kalian yang menggunakan hono, konsep dasar dan cara Penggunaanya hampir mirip dengan elysia.
+
+kalian bisa langsung explore websocket build in dari honojs :
+
+https://hono.dev/docs/helpers/websocket
+
+***EXPLORE :***
+Ini tugas optional kalau kalian mau explore tools websocket yang lain dari bawaan elysia atau hono.
+
+Socket.IO adalah sebuah library JavaScript untuk aplikasi web real-time. Socket.IO memungkinkan komunikasi dua arah secara real-time antara server web dan klien (browser). 
+Pelajari dan explorasi pada library Socket.IO karena akan sangat berguna sekali pada development fullstack apps di phase 2 nanti, jika ada kebutuhan real time API.
+
+https://socket.io/
 
 # Studi Kasus Project Websocket menggunakan Bun + Elysia + Drizzle
 
-## 1. Setup project
+Project ini adalah aplikasi chat real-time menggunakan teknologi:
+
+1. **Bun** - JavaScript runtime yang cepat dan efisien, alternatif dari Node.js
+2. **Elysia** - Framework web yang ringan dan cepat untuk Bun
+3. **Drizzle** - ORM (Object-Relational Mapping) untuk database
+4. **Neon** - Database PostgreSQL berbasis cloud
+
+Aplikasi ini memungkinkan user untuk melakukan chat secara real-time menggunakan WebSocket, serta menyediakan REST API untuk interaksi dengan aplikasi.
+
+## Fitur-fitur Utama:
+
+1. Chat real-time melalui WebSocket
+2. Penyimpanan pesan di database
+3. Manajemen User (pembuatan User, pelacakan aktivitas)
+4. REST API untuk berbagai operasi
+5. Dokumentasi Swagger
+
+## Flow Aplikasi
+
+![image](https://github.com/user-attachments/assets/d974e525-8d9e-49cf-bd99-0d99e9fe96fa)
+
+Berikut diagram alur (flow) dari aplikasi chat real-time ini:
+
+### 1. Inisialisasi Aplikasi
+- Aplikasi dimulai dengan menginisialisasi layanan: `ChatService` dan `UserService`
+- Koneksi ke database Neon dibuat menggunakan Drizzle ORM
+- Elysia menyiapkan endpoint HTTP dan WebSocket
+
+### 2. Koneksi User
+Ketika User terhubung ke aplikasi:
+1. User mengakses aplikasi dan melakukan koneksi WebSocket ke `ws://localhost:3000/ws`
+2. User mengirim pesan "join" dengan username mereka
+3. Server:
+   - Menciptakan/mengambil User dari database
+   - Menambahkan koneksi WebSocket ke daftar User aktif
+   - Mengirim pesan sambutan dan pesan-pesan terbaru ke User
+   - Memberitahu User lain bahwa User baru telah bergabung
+
+### 3. Pengiriman Pesan
+Ketika User ingin mengirim pesan:
+1. User mengirim pesan dengan format `{type: 'message', username: '...', content: '...'}`
+2. Server:
+   - Menyimpan pesan ke database melalui `ChatService`
+   - Menyiarkan (broadcast) pesan ke semua User yang terhubung
+
+### 4. User Keluar
+Ketika User meninggalkan chat:
+1. User mengirim pesan "leave" atau koneksi WebSocket terputus
+2. Server:
+   - Memperbarui waktu terakhir User terlihat di database
+   - Menghapus User dari daftar User aktif
+   - Memberitahu User lain bahwa User tersebut telah meninggalkan chat
+
+## REST API Endpoints
+
+Selain WebSocket, aplikasi juga menyediakan REST API:
+- `GET /messages` - Mendapatkan pesan terbaru
+- `POST /messages` - Mengirim pesan baru (akan disiarkan ke semua klien WebSocket)
+- `GET /users/active` - Mendapatkan daftar User aktif
+- `POST /users` - Membuat User baru
+- `GET /ws-info` - Mendapatkan informasi tentang koneksi WebSocket
+
+## Struktur Database
+
+Database terdiri dari dua tabel utama:
+1. `users` - Menyimpan informasi User (username, waktu terakhir terlihat)
+2. `messages` - Menyimpan pesan chat (konten, User pengirim, waktu)
+
+## Start Develop Simple Chat App
+
+### 1. Setup project
 
 seperti biasa kalian buat folder project untuk membuat ws app chat
 
@@ -155,7 +387,7 @@ ws-chat/
 └── package.json
 ```
 
-## 2. Code
+### 2. Code
 
 kalian bisa tiru code berikut dan di taruh ke dalam file yang sesuai
 
@@ -537,6 +769,168 @@ console.log(`🔌 WebSocket endpoint at ws://localhost:3000/ws`);
 export type App = typeof app;
 ```
 
+- ws-tester
+```
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>WebSocket Chat Tester</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 20px auto;
+            padding: 0 20px;
+        }
+        .container {
+            display: grid;
+            gap: 20px;
+        }
+        .card {
+            border: 1px solid #ddd;
+            padding: 20px;
+            border-radius: 8px;
+            background: #f9f9f9;
+        }
+        #messageLog {
+            height: 300px;
+            overflow-y: auto;
+            border: 1px solid #ccc;
+            padding: 10px;
+            background: white;
+            margin: 10px 0;
+        }
+        .message {
+            margin: 5px 0;
+            padding: 5px;
+        }
+        .system { color: #666; font-style: italic; }
+        input, button {
+            padding: 8px;
+            margin: 5px 0;
+        }
+        input {
+            width: 100%;
+            box-sizing: border-box;
+        }
+        button {
+            background: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            padding: 10px 20px;
+        }
+        button:hover {
+            background: #45a049;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="card">
+            <h2>Connection</h2>
+            <input type="text" id="wsUrl" value="ws://localhost:3000/ws" placeholder="WebSocket URL">
+            <input type="text" id="username" placeholder="Enter your username">
+            <button onclick="connect()">Connect</button>
+            <button onclick="disconnect()">Disconnect</button>
+        </div>
+
+        <div class="card">
+            <h2>Send Message</h2>
+            <input type="text" id="messageInput" placeholder="Type your message...">
+            <button onclick="sendMessage()">Send</button>
+        </div>
+
+        <div class="card">
+            <h2>Message Log</h2>
+            <div id="messageLog"></div>
+        </div>
+    </div>
+
+    <script>
+        let ws;
+        let username;
+
+        function connect() {
+            username = document.getElementById('username').value.trim();
+            const url = document.getElementById('wsUrl').value;
+
+            if (!username) {
+                alert('Please enter a username');
+                return;
+            }
+
+            ws = new WebSocket(url);
+
+            ws.onopen = () => {
+                addToLog('System', 'Connected to server');
+                // Send join message
+                ws.send(JSON.stringify({
+                    type: 'join',
+                    username: username
+                }));
+            };
+
+            ws.onmessage = (event) => {
+                const message = JSON.parse(event.data);
+                addToLog(message.username || 'System', message.content);
+            };
+
+            ws.onclose = () => {
+                addToLog('System', 'Disconnected from server');
+            };
+
+            ws.onerror = (error) => {
+                addToLog('System', 'Error: ' + error.message);
+            };
+        }
+
+        function disconnect() {
+            if (ws) {
+                ws.send(JSON.stringify({
+                    type: 'leave',
+                    username: username
+                }));
+                ws.close();
+            }
+        }
+
+        function sendMessage() {
+            const messageInput = document.getElementById('messageInput');
+            const content = messageInput.value.trim();
+
+            if (!content || !ws || ws.readyState !== WebSocket.OPEN) return;
+
+            ws.send(JSON.stringify({
+                type: 'message',
+                username: username,
+                content: content
+            }));
+
+            messageInput.value = '';
+        }
+
+        function addToLog(sender, content) {
+            const log = document.getElementById('messageLog');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${sender === 'System' ? 'system' : ''}`;
+            messageDiv.textContent = `${sender}: ${content}`;
+            log.appendChild(messageDiv);
+            log.scrollTop = log.scrollHeight;
+        }
+
+        // Allow sending message with Enter key
+        document.getElementById('messageInput').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') sendMessage();
+        });
+    </script>
+</body>
+</html>
+```
+ini script untuk testing websocket dalam bentuk html nanti kalian akan bisa di jalankan di `http://localhost:3000/test`
+
 - package.json
 ```json
 {
@@ -584,7 +978,7 @@ export default {
 } satisfies Config;
 ```
 
-## 3. .ENV and Running
+### 3. .ENV and Running
 
 1. buat file .env di dalam project mu dan masukan variable berikut
 ```
@@ -603,3 +997,55 @@ pertama migrate terlebih dahulu schema databasenya lalu di buse ke dalam databas
 
 setelah kalian run dengan `bun run dev` kalian bisa buka documentation di swagger `http://localhost:300/swagger` 
 lalu untuk mencobanya pertama kalian buat user terlebih dahulu lalu ke api message dan coba api tersebut.
+
+
+# Cara Testing Realtime
+
+Untuk menguji aplikasi chat real-time ini, ikuti langkah-langkah berikut:
+
+### 1. Testing dengan Browser
+Aplikasi menyediakan halaman tester WebSocket yang bisa diakses di `http://localhost:3000/test`
+
+### 2. Testing dengan Swagger
+1. Buka dokumentasi Swagger di `http://localhost:3000/swagger`
+2. Gunakan endpoint `/users` untuk membuat User baru
+3. Uji endpoint `/messages` untuk mengirim dan mendapatkan pesan
+
+### 3. Testing WebSocket dengan Tool Eksternal
+Kalian juga bisa menggunakan alat seperti Postman atau WebSocket client lainnya:
+
+1. Hubungkan ke `ws://localhost:3000/ws`
+2. Kirim pesan bergabung:
+   ```json
+   {
+     "type": "join",
+     "username": "testuser123"
+   }
+   ```
+3. Kirim pesan chat:
+   ```json
+   {
+     "type": "message",
+     "username": "testuser123",
+     "content": "Halo semua!"
+   }
+   ```
+4. Pantau respons server dan pesan dari User lain
+
+### 4. Testing Simultan
+Untuk menguji aspek real-time:
+1. Buka beberapa jendela browser atau tab berbeda dan buka link ini `http://localhost:3000/test`
+2. Jika sudah terbuka akan form seperti ini
+   ![image](https://github.com/user-attachments/assets/62f1a35e-a5f0-4a30-969e-86d120625329)
+
+4. Hubungkan masing-masing ke aplikasi dengan username berbeda
+5. Kirim pesan dari satu klien dan verifikasi bahwa pesan tersebut muncul di semua klien lain secara instan pada message log
+  ![image](https://github.com/user-attachments/assets/21672929-0bf5-4c46-a56d-7c4aaa07521f)
+
+
+### 5. Testing Fitur Khusus
+- Coba hubungkan beberapa User dan kirim pesan antar mereka
+- Verifikasi bahwa pesan disimpan di database (bisa dicek melalui endpoint GET /messages)
+- Coba User keluar dan masuk kembali untuk memverifikasi pesan riwayat
+
+Dengan langkah-langkah ini, Kalian dapat memverifikasi bahwa aplikasi chat berfungsi dengan baik secara real-time, pesan disimpan dengan benar, dan komunikasi antar User berjalan lancar.
